@@ -6,81 +6,77 @@ import (
 
 	"github.com/Quiqui-dev/file_encrpyter_go/src/decrypt"
 	"github.com/Quiqui-dev/file_encrpyter_go/src/encrypt"
-	"golang.org/x/term"
 )
 
 func main() {
 
-	if len(os.Args) < 2 { 
-		handleHelp()
-		os.Exit(0)
-	}
+	app := createApp()
 
-	function := os.Args[1]
+	app.Run(os.Args)
 
-	switch function {
-	case "help":
-		handleHelp()
-	case "encrypt":
-		handleEncrypt()
-	case "decrypt":
-		handleDecrypt()
-	default:
-		fmt.Println("Run encrypt to encrypt a file\n Run decrypt to decrypt a file")
-		os.Exit(1)
-	}
 }
 
-func handleHelp() {
-	fmt.Println("File encrpytion tool\n\nUsage:\n\t./exe /path/to/file\nCommands:\n\t encrpyt\t encrpyts a file given a password\n\t decrpyt \t attempts to decrypt given a password and file\n\t help \tDisplays help text")
-}
+func handleEncryptSingle(path_to_act string, password []byte) {
 
-func handleEncrypt() {
-	if len(os.Args) < 3 {
-		fmt.Println("Missing path to file")
-		os.Exit(1)
+	if !validateFile(path_to_act) {
+		fmt.Println(path_to_act)
 	}
 
-	file := os.Args[2]
+	fmt.Printf("\nEncryption started on %s", path_to_act)
 
-	if !validateFile(file) {
-		panic("File not found")
-	}
-
-	password := getPassword()
-
-	fmt.Println("\nConfirm password: ")
-
-	confrimPass, _ := term.ReadPassword(0)
-
-	if !validatePassword(password, confrimPass) {
-		fmt.Println("\nPasswords do not match. Please try again")
-
-		password = getPassword()
-	}
-
-	fmt.Println("\nEncryption started on file")
-
-	encrypt.Encrpyt(file, password)
+	encrypt.Encrpyt(path_to_act, password)
 	fmt.Println("\nfile successfully protected")
 }
 
-func handleDecrypt() {
-	if len(os.Args) < 3 {
-		fmt.Println("Missing path to file")
-		os.Exit(1)
+func handleEncryptDirectory(path_to_act string, password []byte) {
+
+	// get all files in a dir
+
+	files, err := os.ReadDir(path_to_act)
+
+	if err != nil {
+		panic(err.Error())
 	}
 
-	file := os.Args[2]
+	
+	for _, file := range files {
+		path_to_act_copy := path_to_act
 
-	if !validateFile(file) {
+		path_to_act_copy = path_to_act_copy + file.Name()
+
+		handleEncryptSingle(path_to_act_copy, password)
+	}
+}
+
+func handleDecryptSingle(path_to_act string, password []byte) {
+
+	if !validateFile(path_to_act) {
 		panic("File not found")
 	}
 
-	password := getPassword()
 
-	fmt.Println("\nDecryption started on file")
+	fmt.Printf("\nDecryption started on %s", path_to_act)
 
-	decrypt.Decrpyt(file, password)
+	decrypt.Decrpyt(path_to_act, password)
 	fmt.Println("\nfile successfully decrypted")
+}
+
+func handleDecryptDirectory(path_to_act string, password []byte) {
+
+	// get all files in a dir
+
+	files, err := os.ReadDir(path_to_act)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	
+	for _, file := range files {
+		path_to_act_copy := path_to_act
+
+		path_to_act_copy = path_to_act_copy + file.Name()
+
+		handleDecryptSingle(path_to_act_copy, password)
+	}
 }
